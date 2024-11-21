@@ -54,11 +54,11 @@ UART_HandleTypeDef huart6;
 osThreadId ReadAcceloTaskHandle;
 osThreadId LedTaskHandle;
 osThreadId ReadLocationHandle;
-osThreadId DetectChuteTaskHandle;
+osThreadId FallDetectTaskHandle;
 osThreadId GSMTaskHandle;
 osThreadId AlertButtonTaskHandle;
 osMessageQId AccelQueueHandle;
-osMessageQId DetectChuteQueueHandle;
+osMessageQId FallDetectQueueHandle;
 osMessageQId GPSQueueHandle;
 osMessageQId ButtonQueueHandle;
 /* USER CODE BEGIN PV */
@@ -80,9 +80,8 @@ static void MX_USART2_UART_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART6_UART_Init(void);
 void ReadAcceleration(void const * argument);
-void led(void const * argument);
 void ReadLocalion(void const * argument);
-void DetectChute(void const * argument);
+void FallDetect(void const * argument);
 void GSM(void const * argument);
 void AlertButton(void const * argument);
 
@@ -155,7 +154,7 @@ int main(void)
 
   /* definition and creation of DetectChuteQueue */
   osMessageQDef(DetectChuteQueue, 1, uint8_t);
-  DetectChuteQueueHandle = osMessageCreate(osMessageQ(DetectChuteQueue), NULL);
+  FallDetectQueueHandle = osMessageCreate(osMessageQ(DetectChuteQueue), NULL);
 
   /* definition and creation of GPSQueue */
   osMessageQDef(GPSQueue, 1, uint8_t*);
@@ -174,17 +173,13 @@ int main(void)
   osThreadDef(ReadAcceloTask, ReadAcceleration, osPriorityLow, 0, 128);
   ReadAcceloTaskHandle = osThreadCreate(osThread(ReadAcceloTask), NULL);
 
-  /* definition and creation of LedTask */
-  osThreadDef(LedTask, led, osPriorityLow, 0, 128);
-  LedTaskHandle = osThreadCreate(osThread(LedTask), NULL);
-
   /* definition and creation of ReadLocation */
   osThreadDef(ReadLocation, ReadLocalion, osPriorityLow, 0, 128);
   ReadLocationHandle = osThreadCreate(osThread(ReadLocation), NULL);
 
   /* definition and creation of DetectChuteTask */
   osThreadDef(DetectChuteTask, DetectChute, osPriorityLow, 0, 512);
-  DetectChuteTaskHandle = osThreadCreate(osThread(DetectChuteTask), NULL);
+  FallDetectTaskHandle = osThreadCreate(osThread(DetectChuteTask), NULL);
 
   /* definition and creation of GSMTask */
   osThreadDef(GSMTask, GSM, osPriorityLow, 0, 128);
@@ -552,19 +547,6 @@ void ReadAcceleration(void const * argument)
 * @brief Function implementing the LedTask thread.
 * @param argument: Not used
 * @retval None
-*/
-/* USER CODE END Header_led */
-void led(void const * argument)
-{
-  /* USER CODE BEGIN led */
-  /* Infinite loop */
-  for(;;)
-  {
-
-  }
-  /* USER CODE END led */
-}
-
 /* USER CODE BEGIN Header_ReadLocalion */
 /**
 * @brief Function implementing the ReadLocation thread.
@@ -614,7 +596,7 @@ void ReadLocalion(void const * argument)
 * @retval None
 */
 /* USER CODE END Header_DetectChute */
-void DetectChute(void const * argument)
+void FallDetect(void const * argument)
 {
   /* USER CODE BEGIN DetectChute */
 	float acc;
@@ -657,7 +639,7 @@ void DetectChute(void const * argument)
 	        		          	   {
 	        		          		   sprintf(ch,"\t fall detected\n");
 	        		         	       HAL_UART_Transmit(&huart2, (uint8_t *)ch, strlen(ch), 100);
-	        		     	           xQueueSend(DetectChuteQueueHandle,&falldetected,10);
+	        		     	           xQueueSend(FallDetectQueueHandle,&falldetected,10);
 	        		          	   }
 	        		             }
 	        		          vTaskDelay(200/portTICK_RATE_MS);
@@ -692,7 +674,7 @@ void GSM(void const * argument)
 		  SendSms(msg);
 	  		}
 
-	  if( xQueueReceive( DetectChuteQueueHandle, &falldetected, 0 )  == pdPASS)
+	  if( xQueueReceive( FallDetectQueueHandle, &falldetected, 0 )  == pdPASS)
 	  		{
 		  xQueueReceive(GPSQueueHandle,&location,0);
 		  sprintf(msg,"Urgence! détection de chute. Voici sa localisation: %s", location);
