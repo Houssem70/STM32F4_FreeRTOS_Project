@@ -66,7 +66,7 @@ This system is built on the **STM32F411RE microcontroller**, programmed in **C**
 ## Installation and Usage  
 1. **Clone the repository**:  
    ```bash
-   git clone https://github.com/Houssem70/Safety_Bracelet.git
+   git clone https://github.com/Houssem70/STM32F4_FreeRTOS_Project.git
 2. **Flash the firmware** to the STM32F411RE microcontroller.  
 3. **Connect the hardware components**: ADXL345, NEO-6M, and GSM module as per the hardware configuration described above.  
 4. **Configure the emergency contact number** in the source code.  
